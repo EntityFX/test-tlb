@@ -16,7 +16,10 @@
 
 #define PAGE_SIZE 4096
 
+#ifdef FREQ
+#else
 #define FREQ 3.9
+#endif
 
 static int test_hugepage = 0;
 static int random_list = 0;
@@ -69,7 +72,7 @@ static unsigned long warmup(void *map)
 
 static double do_test(void *map)
 {
-	unsigned long count = 0, offset = 0, usec;
+	unsigned long count = 0, offset = 0, usec, i;
 	struct timeval start, end;
 	struct itimerval itval =  {
 		.it_interval = { 0, 0 },
@@ -82,7 +85,7 @@ static double do_test(void *map)
 	 * timing granularity (0.2s selected randomly to make the
 	 * run-of-five take 1s in the fast case).
 	 */
-	usec = warmup(map) * 5;
+	usec = warmup(map) * 10;
 	if (usec < 200000)
 		usec = 200000;
 	itval.it_value.tv_sec = usec / 1000000;
@@ -94,8 +97,10 @@ static double do_test(void *map)
 
 	gettimeofday(&start, NULL);
 	do {
-		count++;
-		offset = *(unsigned int *)(map + offset);
+		for (i=0;i<10;i++) {
+			count++;
+			offset = *(unsigned int *)(map + offset);
+		}
 	} while (!stop);
 	gettimeofday(&end, NULL);
 	usec = usec_diff(&start, &end);
